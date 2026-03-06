@@ -3,7 +3,7 @@ from typing import List, Annotated
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base
+from app.database import Base
 
 str200_type = Annotated[str, mapped_column(String(200), nullable=False)]
 created_at_type = Annotated[

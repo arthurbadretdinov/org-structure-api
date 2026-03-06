@@ -1,5 +1,5 @@
-from database import Base, engine
-import models
+from app.database import Base, engine
+from app.models import Department, Employee
 
 def main():
     Base.metadata.create_all(bind=engine)
