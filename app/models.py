@@ -36,7 +36,8 @@ class Department(Base):
     )
     employees: Mapped[List["Employee"]] = relationship(
         back_populates="department",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="Employee.full_name"
     )
     
 class Employee(Base):

@@ -1,11 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.exceptions import ErrorCodeException
-from app.models import Department as DbDepartment, Employee as DbEmployee
-from app.schemas import DepartmentCreate, Department, Employee, EmployeeCreate
-from app.services import create_department_service, create_employee_service
+from app.schemas import (
+    DepartmentCreate, 
+    Department, 
+    DepartmentResponse, 
+    Employee, 
+    EmployeeCreate
+)
+from app.services import (
+    create_department_service, 
+    create_employee_service, 
+    get_department_service
+)
 
 router = APIRouter(
     prefix="/departments"
@@ -23,7 +34,7 @@ def get_db():
 def create_department(
     department: DepartmentCreate, 
     db: Session = Depends(get_db)
-) -> DbDepartment:
+) -> Department:
     try:
         db_department = create_department_service(
             db, 
@@ -44,7 +55,7 @@ def create_employee(
     department_id : int,
     employee: EmployeeCreate, 
     db: Session = Depends(get_db)
-) -> DbEmployee:
+) -> Employee:
     try:
         db_employee = create_employee_service(
             db, 
@@ -60,3 +71,30 @@ def create_employee(
         )
     
     return db_employee
+
+
+@router.get(
+    "/{department_id}", 
+    response_model=DepartmentResponse,
+    response_model_exclude_none=True
+)
+def get_department(
+    department_id: int, 
+    depth: int = Query(1, ge=1, le=5),
+    include_employees: bool = True,
+    db: Session = Depends(get_db)
+) -> DepartmentResponse:
+    try:
+        response = get_department_service(
+            db, 
+            department_id,
+            depth,
+            include_employees
+        )
+    except ErrorCodeException as e:
+        raise HTTPException(
+            status_code=e.code, 
+            detail={"code": e.code, "message": e.message}
+        )
+    
+    return DepartmentResponse.model_validate(response)

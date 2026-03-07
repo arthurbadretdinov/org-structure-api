@@ -36,7 +36,17 @@ class EmployeeCreate(BaseModel):
     hired_at: date | None = None
     
     
+class DepartmentResponse(BaseModel):
+    department: Department
+    employees: list[Employee] | None = None
+    children: list["DepartmentResponse"] = []
+
+    class Config:
+        from_attributes = True
+
+DepartmentResponse.model_rebuild()
+    
+    
 class DepartmentMove(BaseModel):
     name: str | None = None
     parent_id: int | None = None
-    

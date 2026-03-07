@@ -3,12 +3,13 @@ from sqlalchemy.orm import Session
 from app.exceptions import ErrorCodeException
 from app.models import Department
 
-def check_department_exists(db: Session, parent_id: int | None):
-    if parent_id is None:
+def check_department_exists(db: Session, department_id: int | None):
+    if department_id is None:
         return
-    parent = db.query(Department).filter(Department.id == parent_id).first()
-    if parent is None:
+    department = db.query(Department).filter(Department.id == department_id).first()
+    if department is None:
         raise ErrorCodeException(404, "Department does not exist")
+    return department
     
 def check_unique_department_name(db: Session, name: str, parent_id: int | None = None):
     department = db.query(Department).filter(Department.name == name)
