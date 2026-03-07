@@ -2,12 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.db_validators import check_parent_exists, check_unique_department_name
 from app.exceptions import ErrorCodeException
-from app.models import Department as DbDepartment
-from app.schemas import DepartmentCreate, Department
-from app.services import create_department_service
-from app.utils import validate_name
+from app.models import Department as DbDepartment, Employee as DbEmployee
+from app.schemas import DepartmentCreate, Department, Employee, EmployeeCreate
+from app.services import create_department_service, create_employee_service
 
 router = APIRouter(
     prefix="/departments"
@@ -19,7 +17,7 @@ def get_db():
         yield db
     finally:
         db.close()
-        
+
 
 @router.post("/", response_model=Department)
 def create_department(
@@ -39,3 +37,26 @@ def create_department(
         )
     
     return db_department
+
+
+@router.post("/{department_id}/employees", response_model=Employee)
+def create_employee(
+    department_id : int,
+    employee: EmployeeCreate, 
+    db: Session = Depends(get_db)
+) -> DbEmployee:
+    try:
+        db_employee = create_employee_service(
+            db, 
+            department_id,
+            employee.full_name, 
+            employee.position, 
+            employee.hired_at
+        )
+    except ErrorCodeException as e:
+        raise HTTPException(
+            status_code=e.code, 
+            detail={"code": e.code, "message": e.message}
+        )
+    
+    return db_employee
