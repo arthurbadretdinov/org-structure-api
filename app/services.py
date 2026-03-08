@@ -1,6 +1,9 @@
 from datetime import date
-
+from sqlalchemy import delete
 from sqlalchemy.orm import Session, selectinload
+
+from app.enums import DeleteMode
+from app.exceptions import ErrorCodeException
 from app.models import Department, Employee
 from app.utils import validate_name
 from app.db_validators import (
@@ -9,6 +12,7 @@ from app.db_validators import (
     check_not_self_parent, 
     check_unique_department_name
 )
+
 
 def create_department_service(
     db: Session, 
@@ -95,7 +99,6 @@ def build_tree(
     return result
 
 
-
 def get_department_service(
     db: Session,
     department_id: int,
@@ -141,3 +144,29 @@ def patch_department_service(
     db.refresh(department)
     
     return department
+
+
+def delete_department_services(
+    db: Session,    
+    department_id: int, 
+    mode: DeleteMode,
+    reassign_to_department_id: int | None
+):
+    check_department_exists(db, department_id)
+    
+    if mode == DeleteMode.reassign:
+        if reassign_to_department_id is None:
+            raise ErrorCodeException(422, "Reassign to department is required")
+        check_department_exists(db, reassign_to_department_id)
+        
+        employees = (
+            db.query(Employee).
+            filter(Employee.department_id == department_id).
+            all()
+        )
+        
+        for employee in employees:
+            employee.department_id = reassign_to_department_id
+        
+    db.execute(delete(Department).where(Department.id == department_id))
+    db.commit()

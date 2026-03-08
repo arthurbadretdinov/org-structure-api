@@ -32,12 +32,16 @@ class Department(Base):
     )
     children: Mapped[List["Department"]] = relationship(
         back_populates="parent",
-        passive_deletes=True
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        single_parent=True
     )
     employees: Mapped[List["Employee"]] = relationship(
         back_populates="department",
         cascade="all, delete-orphan",
-        order_by="Employee.full_name"
+        passive_deletes=True,
+        order_by="Employee.full_name",
+        single_parent=True
     )
     
 class Employee(Base):

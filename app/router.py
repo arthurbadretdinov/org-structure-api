@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
+from app.enums import DeleteMode
 from app.exceptions import ErrorCodeException
 from app.schemas import (
     DepartmentCreate, 
@@ -13,7 +14,8 @@ from app.schemas import (
 )
 from app.services import (
     create_department_service, 
-    create_employee_service, 
+    create_employee_service,
+    delete_department_services, 
     get_department_service,
     patch_department_service
 )
@@ -120,3 +122,26 @@ def patch_department(
         )
     
     return db_department
+
+
+@router.delete("/{department_id}", status_code=204)
+def delete_department(
+    department_id: int, 
+    mode: DeleteMode = Query(...),
+    reassign_to_department_id: int | None = Query(None),
+    db: Session = Depends(get_db)
+):
+    try:
+        delete_department_services(
+            db, 
+            department_id,
+            mode,
+            reassign_to_department_id
+        )
+    except ErrorCodeException as e:
+        raise HTTPException(
+            status_code=e.code, 
+            detail={"code": e.code, "message": e.message}
+        )
+    
+    return
