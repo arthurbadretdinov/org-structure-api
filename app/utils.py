@@ -7,7 +7,7 @@ def validate_name(name: str, field_name: str, max_length: int = 200) -> str:
         raise ErrorCodeException(
             422, 
             f"{field_name} cannot be empty or whitespace")
-    if len(name) > 200:
+    if len(name) > max_length:
         raise ErrorCodeException(
             422, 
             f"{field_name} cannot be longer than 200 characters"

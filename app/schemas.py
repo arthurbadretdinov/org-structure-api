@@ -47,6 +47,6 @@ class DepartmentResponse(BaseModel):
 DepartmentResponse.model_rebuild()
     
     
-class DepartmentMove(BaseModel):
+class DepartmentPatch(BaseModel):
     name: str | None = None
     parent_id: int | None = None

@@ -3,12 +3,17 @@ from datetime import date
 from sqlalchemy.orm import Session, selectinload
 from app.models import Department, Employee
 from app.utils import validate_name
-from app.db_validators import check_department_exists, check_unique_department_name
+from app.db_validators import (
+    check_department_exists,
+    check_no_cycle, 
+    check_not_self_parent, 
+    check_unique_department_name
+)
 
 def create_department_service(
     db: Session, 
     name: str, 
-    parent_id: int | None
+    parent_id: int | None = None
 ) -> Department:
     name = validate_name(name, "Department name")
     check_department_exists(db, parent_id)
@@ -29,9 +34,9 @@ def create_employee_service(
     position: str,
     hired_at: date | None = None
 ) -> Employee:
+    check_department_exists(db, department_id)
     full_name = validate_name(full_name, "Employee full name")
     position = validate_name(position, "Employee position")
-    check_department_exists(db, department_id)
     
     db_employee = Employee(
         department_id=department_id,
@@ -111,3 +116,28 @@ def get_department_service(
     response = build_tree(department, depth, include_employees)
     
     return response
+
+
+def patch_department_service(
+    db: Session,
+    department_id: int,
+    name: str | None = None, 
+    parent_id: int | None = None
+) -> Department:
+    department = check_department_exists(db, department_id)
+    
+    if name is None:
+        name = department.name
+    else:
+        name = validate_name(name, "Department name")
+    check_department_exists(db, parent_id)
+    check_not_self_parent(department_id, parent_id)
+    check_no_cycle(db, department_id, parent_id)
+    check_unique_department_name(db, name, parent_id, department_id)
+    
+    department.name = name
+    department.parent_id = parent_id
+    db.commit()
+    db.refresh(department)
+    
+    return department

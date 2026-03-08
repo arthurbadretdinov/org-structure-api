@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -7,7 +5,8 @@ from app.database import SessionLocal
 from app.exceptions import ErrorCodeException
 from app.schemas import (
     DepartmentCreate, 
-    Department, 
+    Department,
+    DepartmentPatch, 
     DepartmentResponse, 
     Employee, 
     EmployeeCreate
@@ -15,7 +14,8 @@ from app.schemas import (
 from app.services import (
     create_department_service, 
     create_employee_service, 
-    get_department_service
+    get_department_service,
+    patch_department_service
 )
 
 router = APIRouter(
@@ -98,3 +98,25 @@ def get_department(
         )
     
     return DepartmentResponse.model_validate(response)
+
+
+@router.patch("/{department_id}", response_model=Department)
+def patch_department(
+    department_id: int, 
+    department: DepartmentPatch,
+    db: Session = Depends(get_db)
+) -> Department:
+    try:
+        db_department = patch_department_service(
+            db, 
+            department_id,
+            department.name,
+            department.parent_id
+        )
+    except ErrorCodeException as e:
+        raise HTTPException(
+            status_code=e.code, 
+            detail={"code": e.code, "message": e.message}
+        )
+    
+    return db_department
