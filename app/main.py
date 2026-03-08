@@ -1,20 +1,15 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-import uvicorn
 
 from app.router import router
 from app.database import Base, engine
-from app.models import Department, Employee
 
-app = FastAPI()
-app.include_router(router)
 
-def main():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    yield
 
 
-if __name__ == "__main__":
-    main()
-
-
+app = FastAPI(lifespan=lifespan)
+app.include_router(router)
